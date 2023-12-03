@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "94422136887",
+    "project_id": "unihopper-67c5a",
+    "storage_bucket": "unihopper-67c5a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:94422136887:android:7ffe1865c578603a44e7b2",
+        "android_client_info": {
+          "package_name": "edu.utas.ykim7.unihopper_timetable.unihopper_timetable"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "94422136887-pk73ju1as6un63l7dr0lep8ppgqirdhd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKf-Zfhck9XkPHn9822N_0XtSWVen3K7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "94422136887-pk73ju1as6un63l7dr0lep8ppgqirdhd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "94422136887-6gd03ugib5n9a07730g1m0sf916g7hbm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "edu.utas.ykim7.unihoppertimetable.unihopperTimetable"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
