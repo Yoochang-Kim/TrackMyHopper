@@ -1,6 +1,6 @@
 # Track My Hopper
 
-A timetable app for the University of Tasmania's shuttle bus service, Unihopper.
+A Tracking app for the University of Tasmania's shuttle bus service, Unihopper.
 
 ## Getting Started
 
