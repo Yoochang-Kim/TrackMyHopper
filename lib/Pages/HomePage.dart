@@ -278,13 +278,10 @@ class  _HomePageState extends State<HomePage> with SingleTickerProviderStateMixi
                     ListView.builder(
                       itemCount: busStopModel.stops.length,
                       itemBuilder: (BuildContext context, int index) {
-
                         double screenWidth = MediaQuery.of(context).size.width;
                         Widget? subtitleWidget;
-                        //print("리스트 뷰 만드는중");
                         BusStop stop = busStopModel.stops[index];
                         subtitleWidget = busStopModel.getScheduledTimeText(stop, screenWidth);
-                        //print("버스 이름: ${stop.name}의 버스타입은 ${stop.busType}이고 bus remaining은 ${stop.remaining}");
 
                         return InkWell(
                           highlightColor: Colors.red,

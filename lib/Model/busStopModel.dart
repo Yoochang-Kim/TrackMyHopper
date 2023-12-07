@@ -52,7 +52,6 @@ class BusStopModel extends ChangeNotifier {
 
   // Fetches information for each bus stop.
   Future<void> getBusStopInfo() async {
-    //print("progress is $isRequestInProgress");
     if (isRequestInProgress) return;
     _isRequestInProgress = true;
     _isNetworkError = false;
@@ -61,33 +60,28 @@ class BusStopModel extends ChangeNotifier {
     _remainingTime.clear();
 
     try {
-      List<Map<String, dynamic>> stopInfoData = await fetchStopInfo().catchError((e) {
-        print(e);
-        _isNetworkError = true;
-        notifyListeners();
-      });
-
+      List<Map<String, dynamic>> stopInfoData = await fetchStopInfo();
       if (_isNetworkError) return;
 
       var now = DateTime.now();
       var nowSeconds = now.hour * 3600 + now.minute * 60 + now.second;
-      //var nowSeconds = 62400;
 
+      // Fetch stop times in parallel
+      var fetchStopTimesFutures = <Future>[];
       for (final id in stopId) {
+        fetchStopTimesFutures.add(fetchStopTimes(id));
+      }
+      var allStopTimesData = await Future.wait(fetchStopTimesFutures);
+
+      for (int i = 0; i < stopId.length; i++) {
+        final id = stopId[i];
         final Map<String, dynamic> stopInfo = stopInfoData.firstWhere(
                 (element) => element['id'] == id,
             orElse: () => <String, dynamic>{}
         );
 
-        //print("stopInfoData는 $stopInfoData");
-
         if (stopInfo.isNotEmpty) {
-          List<Map<String, dynamic>> stopTimesData = await fetchStopTimes(id).catchError((e) {
-            print(e);
-            _isNetworkError = true;
-            notifyListeners();
-          });
-          if (_isNetworkError) return;
+          List<Map<String, dynamic>> stopTimesData = allStopTimesData[i];
 
           BusStop stop = await processStopInfo(
               stopInfo['id'],
@@ -99,17 +93,11 @@ class BusStopModel extends ChangeNotifier {
               _remainingTime
           );
           _stops.add(stop);
-        } else {
-          //print("Stop $id not found!");
-          continue;
         }
       }
-
       if (_isNetworkError) return;
-
     } catch (e) {
       _isNetworkError = true;
-      notifyListeners();
     }
     _isRequestInProgress = false;
     notifyListeners();
@@ -117,14 +105,6 @@ class BusStopModel extends ChangeNotifier {
 
   // Fetches information for favorite bus stops.
   Future<void> getFavoriteStopsInfo(BuildContext context) async {
-    //if (_isLoaded) return;
-
-    var now = DateTime.now();
-    var nowSeconds = now.hour * 3600 + now.minute * 60 + now.second;
-    //var nowSeconds = 64800;
-    final favouriteModel = context.read<FavouriteStopsModel>();
-    List<String> flId = favouriteModel.favouriteStopsID;
-
     if (isRequestInProgress) return;
     _isRequestInProgress = true;
     _isNetworkError = false;
@@ -134,23 +114,31 @@ class BusStopModel extends ChangeNotifier {
 
     const storage = FlutterSecureStorage();
     String? token = await storage.read(key: 'auth_token');
+    final favouriteModel = context.read<FavouriteStopsModel>();
+    List<String> flId = favouriteModel.favouriteStopsID;
 
-    for(int i = 0 ; i < flId.length; i++){
-      try {
+    // Prepare parallel requests for stop info and stop times
+    var fetchStopInfoFutures = <Future>[];
+    var fetchStopTimesFutures = <Future>[];
+    for (String id in flId) {
+      fetchStopInfoFutures.add(fetchDataFromUrl('https://bearkim117.com/otp/routers/default/index/stops/$id/token/$token'));
+      fetchStopTimesFutures.add(fetchStopTimes(id));
+    }
 
-        Map<String, dynamic> stopInfo = await fetchDataFromUrl('https://bearkim117.com/otp/routers/default/index/stops/${flId[i]}/token/$token');
+    try {
+      var allStopInfoData = await Future.wait(fetchStopInfoFutures);
+      var allStopTimesData = await Future.wait(fetchStopTimesFutures);
+
+      var now = DateTime.now();
+      var nowSeconds = now.hour * 3600 + now.minute * 60 + now.second;
+
+      for (int i = 0; i < flId.length; i++) {
+        Map<String, dynamic> stopInfo = allStopInfoData[i];
         if (stopInfo.isEmpty) {
-          //print("No data found for the stop id ${flId[i]}");
+          print("No data found for the stop id ${flId[i]}");
           continue;
         }
-
-        List<Map<String, dynamic>> stopTimesData = await fetchStopTimes(flId[i]).catchError((e){
-          //print(e);
-          _isNetworkError = true;
-        });
-
-
-        if (_isNetworkError) return;
+        List<Map<String, dynamic>> stopTimesData = allStopTimesData[i];
 
         BusStop stop = await processStopInfo(
             stopInfo['id'],
@@ -163,14 +151,13 @@ class BusStopModel extends ChangeNotifier {
         );
 
         _favoriteStops.add(stop);
-
-      } catch(e) {
-        print(e);
-        _isNetworkError = true;
       }
+    } catch (e) {
+      print(e);
+      _isNetworkError = true;
     }
+
     _isRequestInProgress = false;
-    //_isLoaded = true;
     notifyListeners();
   }
 
@@ -179,7 +166,6 @@ class BusStopModel extends ChangeNotifier {
     if (totalSeconds == null) {
       return "";
     }
-
     Duration duration = Duration(seconds: totalSeconds);
 
     int hours = duration.inHours;
@@ -286,9 +272,7 @@ class BusStopModel extends ChangeNotifier {
       }
     }
     //print("List of bus times is $busTimes");
-
     busTimes.sort((a, b) => a['scheduledArrival'].compareTo(b['scheduledArrival']));
-
     //print("busTime is $busTimes, nowseconds: $nowSeconds");
 
     if (busTimes.isNotEmpty) {
